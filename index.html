@@ -83,11 +83,16 @@
 
         /* Music Player Wave */
         .bar {
+            height: 4px;
+            transition: height 0.2s;
+        }
+        /* Only animate when playing */
+        .playing .bar {
             animation: equalizer 1s infinite ease-in-out;
         }
-        .bar:nth-child(2) { animation-delay: 0.2s; }
-        .bar:nth-child(3) { animation-delay: 0.4s; }
-        .bar:nth-child(4) { animation-delay: 0.1s; }
+        .playing .bar:nth-child(2) { animation-delay: 0.2s; }
+        .playing .bar:nth-child(3) { animation-delay: 0.4s; }
+        .playing .bar:nth-child(4) { animation-delay: 0.1s; }
         
         @keyframes equalizer {
             0%, 100% { height: 4px; }
@@ -117,7 +122,14 @@
         }
     </style>
 </head>
-<body class="relative min-h-screen">
+<body class="relative min-h-screen" onclick="startMusicOnce()">
+
+    <!-- AUDIO PLAYER (Hidden) -->
+    <!-- You MUST upload a file named 'song.mp3' to your GitHub folder for this to work -->
+    <audio id="bgMusic" loop>
+        <source src="song.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
 
     <!-- Background Floating Hearts -->
     <div class="heart-bg" id="heartBg"></div>
@@ -125,15 +137,18 @@
     <!-- Navigation / Header -->
     <nav class="fixed top-0 w-full z-50 px-6 py-4 glass flex justify-between items-center">
         <div class="text-2xl font-bold text-rose-500 script-font">For Baby ❤️</div>
-        <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-rose-400">
-            <div class="flex gap-1 h-4 items-end">
+        
+        <!-- Music Toggle Button -->
+        <button id="musicBtn" onclick="toggleMusic(event)" class="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm text-xs font-semibold text-rose-400 hover:bg-rose-50 transition">
+            <div class="flex gap-1 h-4 items-end" id="musicBars">
                 <div class="bar w-1 bg-rose-400 rounded-full"></div>
                 <div class="bar w-1 bg-rose-400 rounded-full"></div>
                 <div class="bar w-1 bg-rose-400 rounded-full"></div>
                 <div class="bar w-1 bg-rose-400 rounded-full"></div>
             </div>
-            <span>Playing: You'll Be in My Heart by NIKI</span>
-        </div>
+            <span id="musicText">Tap to Play</span>
+            <i class="fas fa-play ml-1" id="playIcon"></i>
+        </button>
     </nav>
 
     <!-- Hero Section -->
@@ -271,6 +286,43 @@
         const startDate = new Date(); 
         startDate.setMonth(startDate.getMonth() - 21); // 21 months ago
         // const startDate = new Date('2023-03-01'); // Uncomment to set exact date
+
+        // --- AUDIO CONTROLLER ---
+        const music = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        const musicText = document.getElementById('musicText');
+        const playIcon = document.getElementById('playIcon');
+        let isPlaying = false;
+        let hasInteracted = false;
+
+        function toggleMusic(e) {
+            if (e) e.stopPropagation(); // Prevent body click from firing double
+
+            if (isPlaying) {
+                music.pause();
+                musicBtn.classList.remove('playing');
+                musicText.innerText = "Paused";
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+            } else {
+                music.play().then(() => {
+                    musicBtn.classList.add('playing');
+                    musicText.innerText = "Playing: You'll Be in My Heart";
+                    playIcon.classList.remove('fa-play');
+                    playIcon.classList.add('fa-pause');
+                }).catch(err => {
+                    console.log("Auto-play prevented by browser. User must interact first.");
+                });
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function startMusicOnce() {
+            if (!hasInteracted && !isPlaying) {
+                hasInteracted = true;
+                toggleMusic();
+            }
+        }
 
         // --- TIMER LOGIC ---
         function updateTimer() {
